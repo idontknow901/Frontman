@@ -1,15 +1,21 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Staff Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: staff
+    description: Staff member operations
+  - name: stats
+    description: Stats and activity tracking
+  - name: warnings
+    description: Warning and strike management
+
 paths:
   /healthz:
     get:
@@ -24,6 +30,207 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      summary: List all staff members
+      parameters:
+        - name: division
+          in: query
+          schema:
+            type: string
+            enum: [Event, Training]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Active, LOA, Suspended, Terminated]
+      responses:
+        "200":
+          description: List of staff members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: createStaff
+      tags: [staff]
+      summary: Add a new staff member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffInput"
+      responses:
+        "201":
+          description: Staff member created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "400":
+          description: Validation error
+
+  /staff/{id}:
+    get:
+      operationId: getStaff
+      tags: [staff]
+      summary: Get a staff member by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateStaff
+      tags: [staff]
+      summary: Update a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffUpdate"
+      responses:
+        "200":
+          description: Updated staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteStaff
+      tags: [staff]
+      summary: Remove a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /staff/{id}/warnings:
+    post:
+      operationId: issueWarning
+      tags: [warnings]
+      summary: Issue a warning or strike to a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarningInput"
+      responses:
+        "200":
+          description: Updated staff member after warning
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+
+  /staff/{id}/stats:
+    patch:
+      operationId: updateStats
+      tags: [stats]
+      summary: Update weekly or monthly stats for a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatsUpdate"
+      responses:
+        "200":
+          description: Updated staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [stats]
+      summary: Get summary stats for the dashboard
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /staff/{id}/status:
+    patch:
+      operationId: updateStaffStatus
+      tags: [staff]
+      summary: Manually update a staff member status (e.g. set LOA)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: Updated staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +241,189 @@ components:
       required:
         - status
 
+    StaffMember:
+      type: object
+      required:
+        - id
+        - name
+        - rank
+        - division
+        - status
+        - accessLevel
+        - weeklyVoiceHours
+        - weeklyMessages
+        - weeklyEventsHosted
+        - weeklyMiniEventsHosted
+        - monthlyVoiceHours
+        - monthlyMessages
+        - monthlyEventsHosted
+        - monthlyMiniEventsHosted
+        - writtenWarnings
+        - activityStrikes
+        - finalStrikes
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        rank:
+          type: string
+        division:
+          type: string
+          enum: [Event, Training]
+        status:
+          type: string
+          enum: [Active, LOA, Suspended, Terminated]
+        accessLevel:
+          type: string
+          enum: [Staff, Assistant Director, Director, HQ]
+        weeklyVoiceHours:
+          type: number
+        weeklyMessages:
+          type: integer
+        weeklyEventsHosted:
+          type: integer
+        weeklyMiniEventsHosted:
+          type: integer
+        monthlyVoiceHours:
+          type: number
+        monthlyMessages:
+          type: integer
+        monthlyEventsHosted:
+          type: integer
+        monthlyMiniEventsHosted:
+          type: integer
+        writtenWarnings:
+          type: integer
+        activityStrikes:
+          type: integer
+        finalStrikes:
+          type: integer
+        suspendedAt:
+          type: ["string", "null"]
+        terminatedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    StaffInput:
+      type: object
+      required:
+        - name
+        - rank
+        - division
+        - accessLevel
+      properties:
+        name:
+          type: string
+          minLength: 1
+        rank:
+          type: string
+          minLength: 1
+        division:
+          type: string
+          enum: [Event, Training]
+        accessLevel:
+          type: string
+          enum: [Staff, Assistant Director, Director, HQ]
+        notes:
+          type: string
+
+    StaffUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        rank:
+          type: string
+        division:
+          type: string
+          enum: [Event, Training]
+        accessLevel:
+          type: string
+          enum: [Staff, Assistant Director, Director, HQ]
+        notes:
+          type: string
+
+    WarningInput:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [written, activityStrike, finalStrike]
+        note:
+          type: string
+
+    StatsUpdate:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [weekly, monthly]
+        voiceHours:
+          type: number
+        messages:
+          type: integer
+        eventsHosted:
+          type: integer
+        miniEventsHosted:
+          type: integer
+
+    StatusUpdate:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [Active, LOA, Suspended, Terminated]
+
+    DashboardSummary:
+      type: object
+      required:
+        - totalStaff
+        - activeStaff
+        - loaStaff
+        - suspendedStaff
+        - terminatedStaff
+        - eventDivisionCount
+        - trainingDivisionCount
+        - totalWrittenWarnings
+        - totalActivityStrikes
+        - totalFinalStrikes
+        - topPerformersByVoiceHours
+        - topPerformersByEvents
+      properties:
+        totalStaff:
+          type: integer
+        activeStaff:
+          type: integer
+        loaStaff:
+          type: integer
+        suspendedStaff:
+          type: integer
+        terminatedStaff:
+          type: integer
+        eventDivisionCount:
+          type: integer
+        trainingDivisionCount:
+          type: integer
+        totalWrittenWarnings:
+          type: integer
+        totalActivityStrikes:
+          type: integer
+        totalFinalStrikes:
+          type: integer
+        topPerformersByVoiceHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffMember"
+        topPerformersByEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/StaffMember"
