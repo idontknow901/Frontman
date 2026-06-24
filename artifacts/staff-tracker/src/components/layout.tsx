@@ -1,9 +1,14 @@
-import { ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, UserPlus, Settings, Command } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, Settings, Command, ShieldCheck, LogOut, Lock } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { AdminLoginModal } from "@/components/admin-login-modal";
+import { Button } from "@/components/ui/button";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
+  const { isAdmin, logout } = useAuth();
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -26,12 +31,29 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="px-4 py-3 border-b border-border bg-muted/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Access</span>
-            <span className="text-xs font-medium bg-primary/20 text-primary px-2 py-0.5 rounded border border-primary/30">
-              Admin — Full
-            </span>
-          </div>
+          {isAdmin ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary font-mono">Admin</span>
+              </div>
+              <button
+                onClick={logout}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors font-mono"
+              >
+                <LogOut className="w-3 h-3" />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setLoginOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-xs font-mono text-muted-foreground hover:text-primary"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              Admin Login
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -41,10 +63,11 @@ export function Layout({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${isActive
-                  ? "bg-primary text-primary-foreground font-medium"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                  isActive
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
@@ -52,6 +75,14 @@ export function Layout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {!isAdmin && (
+          <div className="p-4 border-t border-border">
+            <p className="text-[10px] font-mono text-muted-foreground text-center leading-relaxed">
+              Viewing in read-only mode.<br />Login as admin to make changes.
+            </p>
+          </div>
+        )}
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -61,6 +92,8 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </main>
+
+      <AdminLoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </div>
   );
 }

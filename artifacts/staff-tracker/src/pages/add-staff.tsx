@@ -8,10 +8,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Lock } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/auth-context";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -26,6 +27,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AddStaff() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const createStaff = useCreateStaff();
 
   const form = useForm<FormValues>({
@@ -42,20 +44,36 @@ export default function AddStaff() {
   function onSubmit(values: FormValues) {
     createStaff.mutate({ data: values }, {
       onSuccess: (newStaff) => {
-        toast({ title: "Personnel Added", description: `${newStaff.name} has been added to the registry.` });
+        toast({ title: "Staff Added", description: `${newStaff.name} has been added.` });
         setLocation("/staff");
       },
       onError: () => {
-        toast({ title: "Error", description: "Failed to add personnel.", variant: "destructive" });
+        toast({ title: "Error", description: "Failed to add staff member.", variant: "destructive" });
       }
     });
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-2xl mx-auto py-24 flex flex-col items-center justify-center gap-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-muted/50 border border-border flex items-center justify-center">
+          <Lock className="w-7 h-7 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 className="text-xl font-display font-bold">Admin Access Required</h2>
+          <p className="text-muted-foreground font-mono text-sm mt-2">
+            Log in as admin from the sidebar to add new staff members.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 py-8">
       <div>
-        <h1 className="text-3xl font-display font-bold tracking-tight">Onboard Personnel</h1>
-        <p className="text-muted-foreground mt-1 font-mono text-sm">Register a new staff member to the command system</p>
+        <h1 className="text-3xl font-display font-bold tracking-tight">Add Staff Member</h1>
+        <p className="text-muted-foreground mt-1 font-mono text-sm">Register a new staff member to the system</p>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -63,7 +81,7 @@ export default function AddStaff() {
           <CardHeader className="border-b border-border bg-muted/20">
             <CardTitle className="text-lg font-display flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-primary" />
-              New Identity Record
+              New Staff Record
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -75,9 +93,9 @@ export default function AddStaff() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Designation / Name</FormLabel>
+                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter name..." className="font-mono bg-background" {...field} />
+                          <Input placeholder="Full name..." className="font-mono bg-background" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -88,7 +106,7 @@ export default function AddStaff() {
                     name="rank"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Rank Classification</FormLabel>
+                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Rank</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. Senior Mod" className="font-mono bg-background" {...field} />
                         </FormControl>
@@ -104,7 +122,7 @@ export default function AddStaff() {
                     name="division"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Division Assigment</FormLabel>
+                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Division</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger className="font-mono bg-background">
@@ -112,8 +130,8 @@ export default function AddStaff() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value={StaffInputDivision.Event}>Event Operations</SelectItem>
-                            <SelectItem value={StaffInputDivision.Training}>Training Command</SelectItem>
+                            <SelectItem value={StaffInputDivision.Event}>Event</SelectItem>
+                            <SelectItem value={StaffInputDivision.Training}>Training</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -125,18 +143,18 @@ export default function AddStaff() {
                     name="accessLevel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Clearance Level</FormLabel>
+                        <FormLabel className="uppercase tracking-wider text-xs font-mono">Access Level</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger className="font-mono bg-background">
-                              <SelectValue placeholder="Select access level" />
+                              <SelectValue placeholder="Select level" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value={StaffInputAccessLevel.Staff}>Staff (Level 1)</SelectItem>
-                            <SelectItem value={StaffInputAccessLevel.Assistant_Director}>Assistant Director (Level 2)</SelectItem>
-                            <SelectItem value={StaffInputAccessLevel.Director}>Director (Level 3)</SelectItem>
-                            <SelectItem value={StaffInputAccessLevel.HQ}>HQ Command (Level 4)</SelectItem>
+                            <SelectItem value={StaffInputAccessLevel.Staff}>Staff</SelectItem>
+                            <SelectItem value={StaffInputAccessLevel.Assistant_Director}>Assistant Director</SelectItem>
+                            <SelectItem value={StaffInputAccessLevel.Director}>Director</SelectItem>
+                            <SelectItem value={StaffInputAccessLevel.HQ}>HQ</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -150,12 +168,12 @@ export default function AddStaff() {
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="uppercase tracking-wider text-xs font-mono">Initial Dossier Notes</FormLabel>
+                      <FormLabel className="uppercase tracking-wider text-xs font-mono">Notes (optional)</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Optional notes regarding this operative..." 
-                          className="min-h-[100px] font-mono bg-background resize-none" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Any notes about this staff member..."
+                          className="min-h-[100px] font-mono bg-background resize-none"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -164,12 +182,12 @@ export default function AddStaff() {
                 />
 
                 <div className="flex justify-end pt-4 border-t border-border">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={createStaff.isPending}
                     className="font-mono uppercase tracking-widest font-bold"
                   >
-                    {createStaff.isPending ? "Transmitting..." : "Initialize Record"}
+                    {createStaff.isPending ? "Saving..." : "Add Staff Member"}
                   </Button>
                 </div>
               </form>
