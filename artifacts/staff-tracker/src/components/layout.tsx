@@ -1,11 +1,9 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth-context";
 import { LayoutDashboard, Users, UserPlus, Settings, Command } from "lucide-react";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
-  const { role } = useAuth();
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -29,9 +27,9 @@ export function Layout({ children }: { children: ReactNode }) {
         
         <div className="px-4 py-3 border-b border-border bg-muted/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Viewer Role</span>
+            <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Access</span>
             <span className="text-xs font-medium bg-primary/20 text-primary px-2 py-0.5 rounded border border-primary/30">
-              {role}
+              HQ — Full
             </span>
           </div>
         </div>

@@ -30,7 +30,7 @@ export default function StaffDetail() {
   const [statsForm, setStatsForm] = useState({ voiceHours: 0, messages: 0, eventsHosted: 0, miniEventsHosted: 0 });
   const [warningDialog, setWarningDialog] = useState<{ isOpen: boolean; type: WarningInputType | null }>({ isOpen: false, type: null });
 
-  const { data: staff, isLoading } = useGetStaff(staffId, { query: { enabled: !!staffId } });
+  const { data: staff, isLoading } = useGetStaff(staffId, { query: { enabled: !!staffId, queryKey: getGetStaffQueryKey(staffId) } });
   const updateStats = useUpdateStats();
   const updateStatus = useUpdateStaffStatus();
   const issueWarning = useIssueWarning();
@@ -233,7 +233,7 @@ export default function StaffDetail() {
               
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Override Status</label>
-                <Select value={staff.status} onValueChange={handleStatusChange} disabled={!canIssueWarning && role !== 'Assistant Director'}>
+                <Select value={staff.status} onValueChange={handleStatusChange} disabled={!canIssueWarning}>
                   <SelectTrigger className="font-mono bg-background text-xs">
                     <SelectValue />
                   </SelectTrigger>
