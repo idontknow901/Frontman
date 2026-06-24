@@ -32,14 +32,17 @@ export default function StaffDetail() {
   const [infoForm, setInfoForm] = useState({ name: "", rank: "", division: "" });
   const [warningDialog, setWarningDialog] = useState<{ isOpen: boolean; type: WarningInputType | null }>({ isOpen: false, type: null });
 
-  const { data: staff, isLoading } = useGetStaff(staffId, { query: { enabled: !!staffId, queryKey: getGetStaffQueryKey(staffId) } });
+  const { data: staff, isLoading } = useGetStaff(staffId, {
+    query: { enabled: !!staffId && !isNaN(staffId), queryKey: getGetStaffQueryKey(staffId) }
+  });
+
   const updateStats = useUpdateStats();
   const updateStatus = useUpdateStaffStatus();
   const updateStaff = useUpdateStaff();
   const issueWarning = useIssueWarning();
   const deleteStaff = useDeleteStaff();
 
-  if (isLoading || !staff) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-12 w-48" />
@@ -48,7 +51,11 @@ export default function StaffDetail() {
     );
   }
 
-  const getStatusColor = (s: string) => {
+  if (!staff) {
+    return <div className="p-8 text-muted-foreground font-mono">Staff member not found.</div>;
+  }
+
+  const statusColor = (s: string) => {
     switch (s) {
       case 'Active': return 'bg-green-500/20 text-green-500 border-green-500/30';
       case 'LOA': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
@@ -58,77 +65,113 @@ export default function StaffDetail() {
     }
   };
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: getGetStaffQueryKey(staffId) });
+  const refresh = (updated: typeof staff) => {
+    queryClient.setQueryData(getGetStaffQueryKey(staffId), updated);
   };
 
+  const errToast = (action: string) =>
+    toast({ title: `Failed: ${action}`, description: "Check your connection and try again.", variant: "destructive" });
+
   const handleStatusChange = (newStatus: string) => {
-    updateStatus.mutate({ id: staffId, data: { status: newStatus as any } }, {
-      onSuccess: () => {
-        invalidate();
-        toast({ title: "Status Updated", description: `Status changed to ${newStatus}` });
+    updateStatus.mutate(
+      { id: staffId, data: { status: newStatus as any } },
+      {
+        onSuccess: (data) => { refresh(data); toast({ title: "Status updated", description: `Changed to ${newStatus}` }); },
+        onError: () => errToast("Update status"),
       }
-    });
+    );
   };
 
   const handleSaveStats = () => {
-    updateStats.mutate({ id: staffId, data: { period, ...statsForm } }, {
-      onSuccess: () => {
-        invalidate();
-        setIsEditingStats(false);
-        toast({ title: "Stats Updated", description: `${period} stats saved.` });
+    updateStats.mutate(
+      { id: staffId, data: { period, voiceHours: Number(statsForm.voiceHours), messages: Math.round(Number(statsForm.messages)), eventsHosted: Math.round(Number(statsForm.eventsHosted)), miniEventsHosted: Math.round(Number(statsForm.miniEventsHosted)) } },
+      {
+        onSuccess: (data) => {
+          refresh(data);
+          setIsEditingStats(false);
+          toast({ title: "Stats saved", description: `${period === 'weekly' ? 'Weekly' : 'Monthly'} stats updated.` });
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to save stats", description: err?.message || "Please try again.", variant: "destructive" });
+        },
       }
-    });
+    );
   };
 
   const handleSaveInfo = () => {
-    updateStaff.mutate({ id: staffId, data: { name: infoForm.name, rank: infoForm.rank, division: infoForm.division as any } }, {
-      onSuccess: () => {
-        invalidate();
-        setIsEditingInfo(false);
-        toast({ title: "Profile Updated", description: "Staff info saved." });
+    if (!infoForm.name.trim() || !infoForm.rank.trim()) {
+      toast({ title: "Validation error", description: "Name and rank cannot be empty.", variant: "destructive" });
+      return;
+    }
+    updateStaff.mutate(
+      { id: staffId, data: { name: infoForm.name.trim(), rank: infoForm.rank.trim(), division: infoForm.division as any } },
+      {
+        onSuccess: (data) => {
+          refresh(data);
+          setIsEditingInfo(false);
+          toast({ title: "Profile updated", description: "Name, rank, and division saved." });
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to update profile", description: err?.message || "Please try again.", variant: "destructive" });
+        },
       }
-    });
+    );
   };
 
   const handleIssueWarning = (type: WarningInputType) => {
-    issueWarning.mutate({ id: staffId, data: { type, note: "Admin issued via dashboard" } }, {
-      onSuccess: () => {
-        invalidate();
-        setWarningDialog({ isOpen: false, type: null });
-        toast({ title: "Warning Issued", description: `${type} recorded.`, variant: "destructive" });
+    issueWarning.mutate(
+      { id: staffId, data: { type } },
+      {
+        onSuccess: (data) => {
+          refresh(data);
+          setWarningDialog({ isOpen: false, type: null });
+          toast({ title: "Warning issued", description: `${type === WarningInputType.written ? 'Written warning' : type === WarningInputType.activityStrike ? 'Activity strike' : 'Final strike'} recorded.`, variant: "destructive" });
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to issue warning", description: err?.message || "Please try again.", variant: "destructive" });
+        },
       }
-    });
+    );
   };
 
   const handleDelete = () => {
-    if (confirm(`Permanently delete ${staff.name}? This cannot be undone.`)) {
-      deleteStaff.mutate({ id: staffId }, {
+    if (!confirm(`Permanently remove ${staff.name}? This cannot be undone.`)) return;
+    deleteStaff.mutate(
+      { id: staffId },
+      {
         onSuccess: () => {
-          toast({ title: "Staff Removed", description: "Record deleted." });
+          toast({ title: "Staff removed", description: `${staff.name} has been deleted.` });
           setLocation("/staff");
-        }
-      });
-    }
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to remove staff", description: err?.message || "Please try again.", variant: "destructive" });
+        },
+      }
+    );
   };
 
-  const WarningBar = ({ count, type, label }: { count: number, type: 'written' | 'activity' | 'final', label: string }) => {
-    const color = type === 'written' ? 'bg-yellow-500' : type === 'activity' ? 'bg-orange-500' : 'bg-red-500';
-    const textColor = type === 'written' ? 'text-yellow-500' : type === 'activity' ? 'text-orange-500' : 'text-red-500';
+  const WarningBar = ({ count, type, label }: { count: number; type: 'written' | 'activity' | 'final'; label: string }) => {
+    const filled = type === 'written' ? 'bg-yellow-500' : type === 'activity' ? 'bg-orange-500' : 'bg-red-500';
+    const text = type === 'written' ? 'text-yellow-500' : type === 'activity' ? 'text-orange-500' : 'text-red-500';
     return (
       <div className="space-y-1.5">
-        <div className="flex justify-between text-xs font-mono uppercase">
-          <span className={`${textColor} font-medium`}>{label}</span>
+        <div className="flex justify-between text-xs font-mono">
+          <span className={`${text} font-medium uppercase`}>{label}</span>
           <span className="font-bold">{count} / 3</span>
         </div>
         <div className="flex gap-1 h-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className={`flex-1 rounded-sm ${i <= count ? color : 'bg-secondary'}`} />
+            <div key={i} className={`flex-1 rounded-sm ${i <= count ? filled : 'bg-secondary'}`} />
           ))}
         </div>
       </div>
     );
   };
+
+  const voiceVal = period === 'weekly' ? staff.weeklyVoiceHours : staff.monthlyVoiceHours;
+  const msgsVal = period === 'weekly' ? staff.weeklyMessages : staff.monthlyMessages;
+  const eventsVal = period === 'weekly' ? staff.weeklyEventsHosted : staff.monthlyEventsHosted;
+  const miniVal = period === 'weekly' ? staff.weeklyMiniEventsHosted : staff.monthlyMiniEventsHosted;
 
   return (
     <div className="space-y-6 pb-20">
@@ -137,14 +180,14 @@ export default function StaffDetail() {
         <Link href="/staff" className="p-2 hover:bg-secondary rounded-full transition-colors mt-1">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {isEditingInfo ? (
             <div className="space-y-3">
               <Input
                 value={infoForm.name}
                 onChange={e => setInfoForm(f => ({ ...f, name: e.target.value }))}
-                className="text-2xl font-bold font-display bg-background h-12"
-                placeholder="Name"
+                className="text-xl font-bold font-display bg-background"
+                placeholder="Full name"
               />
               <div className="flex gap-3">
                 <Input
@@ -165,10 +208,10 @@ export default function StaffDetail() {
               </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleSaveInfo} disabled={updateStaff.isPending} className="font-mono text-xs uppercase">
-                  <Check className="w-3.5 h-3.5 mr-1" /> Save
+                  <Check className="w-3.5 h-3.5 mr-1" />{updateStaff.isPending ? "Saving..." : "Save"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setIsEditingInfo(false)} className="font-mono text-xs uppercase">
-                  <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                  <X className="w-3.5 h-3.5 mr-1" />Cancel
                 </Button>
               </div>
             </div>
@@ -176,7 +219,7 @@ export default function StaffDetail() {
             <div>
               <h1 className="text-3xl font-display font-bold tracking-tight flex items-center gap-3 flex-wrap">
                 {staff.name}
-                <span className={`text-xs px-2.5 py-1 rounded font-mono uppercase border ${getStatusColor(staff.status)}`}>
+                <span className={`text-xs px-2.5 py-1 rounded font-mono uppercase border ${statusColor(staff.status)}`}>
                   {staff.status}
                 </span>
                 {isAdmin && (
@@ -190,62 +233,63 @@ export default function StaffDetail() {
                 )}
               </h1>
               <p className="text-muted-foreground mt-1 font-mono text-sm">
-                {staff.rank} • {staff.division} Division • Level: {staff.accessLevel}
+                {staff.rank} · {staff.division} Division · {staff.accessLevel}
               </p>
             </div>
           )}
         </div>
         {isAdmin && !isEditingInfo && (
-          <Button variant="destructive" size="sm" onClick={handleDelete} className="font-mono uppercase text-xs flex-shrink-0">
-            <Trash2 className="w-4 h-4 mr-2" /> Remove
+          <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleteStaff.isPending} className="font-mono uppercase text-xs flex-shrink-0">
+            <Trash2 className="w-4 h-4 mr-2" />{deleteStaff.isPending ? "Removing..." : "Remove"}
           </Button>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Stats Card */}
+        {/* Stats */}
         <Card className="bg-card border-border shadow-sm md:col-span-2">
           <CardHeader className="border-b border-border bg-muted/20 flex flex-row items-center justify-between py-4">
             <CardTitle className="text-lg font-display flex items-center gap-2">
               <Activity className="w-5 h-5 text-primary" />
               Activity Stats
             </CardTitle>
-            <ToggleGroup type="single" value={period} onValueChange={(v) => { if (v) { setPeriod(v as any); setIsEditingStats(false); } }} className="bg-background border border-border p-1 rounded-md">
+            <ToggleGroup type="single" value={period} onValueChange={v => { if (v) { setPeriod(v as any); setIsEditingStats(false); } }} className="bg-background border border-border p-1 rounded-md">
               <ToggleGroupItem value="weekly" className="h-7 px-3 font-mono text-xs uppercase data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Weekly</ToggleGroupItem>
               <ToggleGroupItem value="monthly" className="h-7 px-3 font-mono text-xs uppercase data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Monthly</ToggleGroupItem>
             </ToggleGroup>
           </CardHeader>
           <CardContent className="p-6">
-            {!isEditingStats ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { label: "Voice Hours", value: `${period === 'weekly' ? staff.weeklyVoiceHours : staff.monthlyVoiceHours}h` },
-                  { label: "Messages", value: period === 'weekly' ? staff.weeklyMessages : staff.monthlyMessages },
-                  { label: "Events", value: period === 'weekly' ? staff.weeklyEventsHosted : staff.monthlyEventsHosted },
-                  { label: "Mini-Events", value: period === 'weekly' ? staff.weeklyMiniEventsHosted : staff.monthlyMiniEventsHosted },
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <div className="text-xs uppercase font-mono text-muted-foreground mb-1">{label}</div>
-                    <div className="text-3xl font-bold font-mono">{value}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            {isEditingStats ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: "Voice Hours", key: "voiceHours" as const, type: "number" },
-                  { label: "Messages", key: "messages" as const, type: "number" },
-                  { label: "Events", key: "eventsHosted" as const, type: "number" },
-                  { label: "Mini-Events", key: "miniEventsHosted" as const, type: "number" },
+                  { label: "Voice Hours", key: "voiceHours" as const },
+                  { label: "Messages", key: "messages" as const },
+                  { label: "Events", key: "eventsHosted" as const },
+                  { label: "Mini-Events", key: "miniEventsHosted" as const },
                 ].map(({ label, key }) => (
                   <div key={key} className="space-y-2">
                     <label className="text-xs uppercase font-mono text-muted-foreground">{label}</label>
                     <Input
                       type="number"
+                      min="0"
                       value={statsForm[key]}
-                      onChange={e => setStatsForm(s => ({ ...s, [key]: +e.target.value }))}
+                      onChange={e => setStatsForm(s => ({ ...s, [key]: e.target.value === '' ? 0 : Number(e.target.value) }))}
                       className="font-mono bg-background"
                     />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { label: "Voice Hours", value: `${voiceVal}h` },
+                  { label: "Messages", value: msgsVal },
+                  { label: "Events", value: eventsVal },
+                  { label: "Mini-Events", value: miniVal },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <div className="text-xs uppercase font-mono text-muted-foreground mb-1">{label}</div>
+                    <div className="text-3xl font-bold font-mono">{value}</div>
                   </div>
                 ))}
               </div>
@@ -256,21 +300,16 @@ export default function StaffDetail() {
                 {isEditingStats ? (
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setIsEditingStats(false)} className="font-mono uppercase text-xs">Cancel</Button>
-                    <Button onClick={handleSaveStats} className="font-mono uppercase text-xs" disabled={updateStats.isPending}>
+                    <Button onClick={handleSaveStats} disabled={updateStats.isPending} className="font-mono uppercase text-xs">
                       {updateStats.isPending ? "Saving..." : "Save Stats"}
                     </Button>
                   </div>
                 ) : (
                   <Button variant="outline" onClick={() => {
-                    setStatsForm({
-                      voiceHours: period === 'weekly' ? staff.weeklyVoiceHours : staff.monthlyVoiceHours,
-                      messages: period === 'weekly' ? staff.weeklyMessages : staff.monthlyMessages,
-                      eventsHosted: period === 'weekly' ? staff.weeklyEventsHosted : staff.monthlyEventsHosted,
-                      miniEventsHosted: period === 'weekly' ? staff.weeklyMiniEventsHosted : staff.monthlyMiniEventsHosted,
-                    });
+                    setStatsForm({ voiceHours: voiceVal, messages: msgsVal, eventsHosted: eventsVal, miniEventsHosted: miniVal });
                     setIsEditingStats(true);
                   }} className="font-mono uppercase text-xs">
-                    <Pencil className="w-3.5 h-3.5 mr-2" /> Edit Stats
+                    <Pencil className="w-3.5 h-3.5 mr-2" />Edit Stats
                   </Button>
                 )}
               </div>
@@ -278,7 +317,7 @@ export default function StaffDetail() {
           </CardContent>
         </Card>
 
-        {/* Disciplinary Card */}
+        {/* Disciplinary */}
         <Card className="bg-card border-border shadow-sm">
           <CardHeader className="border-b border-border bg-muted/20 py-4">
             <CardTitle className="text-lg font-display flex items-center gap-2">
@@ -293,11 +332,11 @@ export default function StaffDetail() {
 
             {isAdmin && (
               <div className="pt-4 border-t border-border space-y-3">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Admin Controls</h3>
+                <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-bold">Admin Controls</h3>
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Change Status</label>
-                  <Select value={staff.status} onValueChange={handleStatusChange}>
+                  <Select value={staff.status} onValueChange={handleStatusChange} disabled={updateStatus.isPending}>
                     <SelectTrigger className="font-mono bg-background text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -312,24 +351,30 @@ export default function StaffDetail() {
 
                 <div className="space-y-2 pt-1">
                   <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Issue Warning / Strike</label>
-                  <Button variant="outline" className="w-full justify-start text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-500 border-yellow-500/20 font-mono text-xs uppercase" onClick={() => setWarningDialog({ isOpen: true, type: WarningInputType.written })}>
-                    <AlertTriangle className="w-4 h-4 mr-2" /> Written Warning
+                  <Button variant="outline" className="w-full justify-start text-yellow-500 hover:bg-yellow-500/10 border-yellow-500/20 font-mono text-xs uppercase" onClick={() => setWarningDialog({ isOpen: true, type: WarningInputType.written })}>
+                    <AlertTriangle className="w-4 h-4 mr-2" />Written Warning
                   </Button>
-                  <Button variant="outline" className="w-full justify-start text-orange-500 hover:bg-orange-500/10 hover:text-orange-500 border-orange-500/20 font-mono text-xs uppercase" onClick={() => setWarningDialog({ isOpen: true, type: WarningInputType.activityStrike })}>
-                    <AlertTriangle className="w-4 h-4 mr-2" /> Activity Strike
+                  <Button variant="outline" className="w-full justify-start text-orange-500 hover:bg-orange-500/10 border-orange-500/20 font-mono text-xs uppercase" onClick={() => setWarningDialog({ isOpen: true, type: WarningInputType.activityStrike })}>
+                    <AlertTriangle className="w-4 h-4 mr-2" />Activity Strike
                   </Button>
-                  <Button variant="outline" className="w-full justify-start text-red-500 hover:bg-red-500/10 hover:text-red-500 border-red-500/20 font-mono text-xs uppercase" onClick={() => setWarningDialog({ isOpen: true, type: WarningInputType.finalStrike })}>
-                    <AlertTriangle className="w-4 h-4 mr-2" /> Final Strike
+                  <Button variant="outline" className="w-full justify-start text-red-500 hover:bg-red-500/10 border-red-500/20 font-mono text-xs uppercase" onClick={() => setWarningDialog({ isOpen: true, type: WarningInputType.finalStrike })}>
+                    <AlertTriangle className="w-4 h-4 mr-2" />Final Strike
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {!isAdmin && (
+              <div className="pt-4 border-t border-border text-center">
+                <p className="text-xs font-mono text-muted-foreground">Login as admin to manage warnings & status</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Warning Confirmation Dialog */}
-      <Dialog open={warningDialog.isOpen} onOpenChange={(v) => !v && setWarningDialog({ isOpen: false, type: null })}>
+      {/* Warning Dialog */}
+      <Dialog open={warningDialog.isOpen} onOpenChange={v => !v && setWarningDialog({ isOpen: false, type: null })}>
         <DialogContent className="border-border bg-card">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2 text-red-500">
@@ -337,8 +382,17 @@ export default function StaffDetail() {
               Confirm Action
             </DialogTitle>
             <DialogDescription className="font-mono text-sm pt-2">
-              Issue a <strong>{warningDialog.type === WarningInputType.written ? "Written Warning" : warningDialog.type === WarningInputType.activityStrike ? "Activity Strike" : "Final Strike"}</strong> to <strong>{staff.name}</strong>?
-              This will be permanently recorded.
+              Issue a <strong>
+                {warningDialog.type === WarningInputType.written ? "Written Warning"
+                  : warningDialog.type === WarningInputType.activityStrike ? "Activity Strike"
+                  : "Final Strike"}
+              </strong> to <strong>{staff.name}</strong>? This is permanently recorded.
+              {warningDialog.type === WarningInputType.activityStrike && staff.activityStrikes >= 2 && (
+                <span className="block mt-2 text-orange-400">Warning: 3 activity strikes = automatic Suspension.</span>
+              )}
+              {warningDialog.type === WarningInputType.finalStrike && staff.finalStrikes >= 2 && (
+                <span className="block mt-2 text-red-400">Warning: 3 final strikes = automatic Termination.</span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 border-t border-border pt-4">

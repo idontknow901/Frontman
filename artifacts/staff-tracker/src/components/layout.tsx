@@ -1,9 +1,8 @@
 import { useState, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, UserPlus, Settings, Command, ShieldCheck, LogOut, Lock } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, Settings, ShieldCheck, LogOut, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AdminLoginModal } from "@/components/admin-login-modal";
-import { Button } from "@/components/ui/button";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -22,11 +21,11 @@ export function Layout({ children }: { children: ReactNode }) {
       <aside className="w-full md:w-64 border-b md:border-r border-border bg-card flex-shrink-0 flex flex-col">
         <div className="p-4 flex items-center gap-3 border-b border-border">
           <div className="bg-primary/20 p-2 rounded-md">
-            <Command className="w-6 h-6 text-primary" />
+            <ShieldCheck className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="font-display font-bold text-lg leading-tight">OPS COMMAND</h1>
-            <p className="text-xs text-muted-foreground font-mono">STAFF TRACKER</p>
+            <h1 className="font-display font-bold text-lg leading-tight">RPB Tracker</h1>
+            <p className="text-xs text-muted-foreground font-mono">STAFF MANAGEMENT</p>
           </div>
         </div>
 

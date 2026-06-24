@@ -47,7 +47,7 @@ export function AdminLoginModal({ open, onClose }: AdminLoginModalProps) {
             <Lock className="w-5 h-5 text-primary" />
           </div>
           <DialogHeader>
-            <DialogTitle className="font-display text-lg text-center">Admin Login</DialogTitle>
+            <DialogTitle className="font-display text-lg text-center">RPB Tracker — Admin Login</DialogTitle>
           </DialogHeader>
           <p className="text-muted-foreground font-mono text-xs mt-1">Enter the admin password to unlock all controls</p>
         </div>
