@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useListStaff, ListStaffDivision, ListStaffStatus, StaffMember } from "@workspace/api-client-react";
+import { useListStaff, ListStaffDivision, ListStaffStatus } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Search, ChevronRight, FilterX } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -23,13 +23,13 @@ export default function StaffList() {
 
   const { data: staffList, isLoading, isError } = useListStaff(queryParams);
 
-  const filteredStaff = (staffList || []).filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredStaff = (staffList || []).filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.rank.toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusColor = (s: string) => {
-    switch(s) {
+    switch (s) {
       case 'Active': return 'bg-green-500/20 text-green-500 border-green-500/30';
       case 'LOA': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
       case 'Suspended': return 'bg-orange-500/20 text-orange-500 border-orange-500/30';
@@ -38,7 +38,7 @@ export default function StaffList() {
     }
   };
 
-  const WarningPips = ({ count, type }: { count: number, type: 'written'|'activity'|'final' }) => {
+  const WarningPips = ({ count, type }: { count: number, type: 'written' | 'activity' | 'final' }) => {
     const color = type === 'written' ? 'bg-yellow-500' : type === 'activity' ? 'bg-orange-500' : 'bg-red-500';
     return (
       <div className="flex gap-1">
@@ -46,8 +46,8 @@ export default function StaffList() {
           <div key={i} className={`w-2 h-2 rounded-full ${i <= count ? color : 'bg-border'}`} />
         ))}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6 flex flex-col h-full">
@@ -56,7 +56,7 @@ export default function StaffList() {
           <h1 className="text-3xl font-display font-bold tracking-tight">Personnel Roster</h1>
           <p className="text-muted-foreground mt-1 font-mono text-sm">Directory of all tracked operatives</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as "weekly" | "monthly")} className="bg-card border border-border p-1 rounded-md">
             <ToggleGroupItem value="weekly" className="h-8 px-4 font-mono text-xs uppercase data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Weekly</ToggleGroupItem>
@@ -67,19 +67,19 @@ export default function StaffList() {
 
       <div className="p-4 bg-card border border-border rounded-lg shadow-sm flex flex-col md:flex-row gap-4 items-end">
         <div className="flex-1 w-full space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search Query</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search</label>
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
-            <Input 
-              placeholder="Designation or rank..." 
-              value={search} 
+            <Input
+              placeholder="Name or rank..."
+              value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-9 font-mono bg-background"
             />
           </div>
         </div>
         <div className="w-full md:w-48 space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Division Filter</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Division</label>
           <Select value={division} onValueChange={(v: any) => setDivision(v)}>
             <SelectTrigger className="font-mono bg-background">
               <SelectValue />
@@ -92,7 +92,7 @@ export default function StaffList() {
           </Select>
         </div>
         <div className="w-full md:w-48 space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status Filter</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</label>
           <Select value={status} onValueChange={(v: any) => setStatus(v)}>
             <SelectTrigger className="font-mono bg-background">
               <SelectValue />
@@ -106,8 +106,8 @@ export default function StaffList() {
             </SelectContent>
           </Select>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="h-10 px-3 w-full md:w-auto"
           onClick={() => { setSearch(""); setDivision("ALL"); setStatus("ALL"); }}
         >
@@ -119,11 +119,11 @@ export default function StaffList() {
       <div className="flex-1 bg-card border border-border rounded-lg overflow-hidden shadow-sm flex flex-col">
         {isLoading ? (
           <div className="p-4 space-y-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-12 w-full" />)}
           </div>
         ) : isError ? (
           <div className="flex-1 flex items-center justify-center text-muted-foreground p-8">
-            Connection to mainframe failed. Retrying...
+            Connection failed. Retrying...
           </div>
         ) : filteredStaff.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-16 border-dashed border-2 border-border m-4 rounded-lg">
@@ -135,21 +135,22 @@ export default function StaffList() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-mono text-xs uppercase tracking-wider h-10">Operative</TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider h-10">Name</TableHead>
                   <TableHead className="font-mono text-xs uppercase tracking-wider h-10">Division</TableHead>
                   <TableHead className="font-mono text-xs uppercase tracking-wider h-10">Status</TableHead>
                   <TableHead className="font-mono text-xs uppercase tracking-wider h-10 text-right">Voice Hrs</TableHead>
-                  <TableHead className="font-mono text-xs uppercase tracking-wider h-10 text-right">Msgs</TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider h-10 text-right">Messages</TableHead>
                   <TableHead className="font-mono text-xs uppercase tracking-wider h-10 text-right">Events</TableHead>
+                  <TableHead className="font-mono text-xs uppercase tracking-wider h-10 text-right">Mini-Events</TableHead>
                   <TableHead className="font-mono text-xs uppercase tracking-wider h-10">Warnings</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <AnimatePresence>
-                  {filteredStaff.map((staff, idx) => (
-                    <TableRow 
-                      key={staff.id} 
+                  {filteredStaff.map((staff) => (
+                    <TableRow
+                      key={staff.id}
                       className="group cursor-pointer hover:bg-secondary/40 transition-colors"
                     >
                       <TableCell>
@@ -167,7 +168,7 @@ export default function StaffList() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-mono">
-                        {period === 'weekly' ? staff.weeklyVoiceHours : staff.monthlyVoiceHours}
+                        {period === 'weekly' ? staff.weeklyVoiceHours : staff.monthlyVoiceHours}h
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {period === 'weekly' ? staff.weeklyMessages : staff.monthlyMessages}
@@ -175,11 +176,23 @@ export default function StaffList() {
                       <TableCell className="text-right font-mono">
                         {period === 'weekly' ? staff.weeklyEventsHosted : staff.monthlyEventsHosted}
                       </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {period === 'weekly' ? staff.weeklyMiniEventsHosted : staff.monthlyMiniEventsHosted}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1.5">
-                          <WarningPips count={staff.writtenWarnings} type="written" />
-                          <WarningPips count={staff.activityStrikes} type="activity" />
-                          <WarningPips count={staff.finalStrikes} type="final" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-mono text-yellow-500/70 uppercase w-12">Written</span>
+                            <WarningPips count={staff.writtenWarnings} type="written" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-mono text-orange-500/70 uppercase w-12">Activity</span>
+                            <WarningPips count={staff.activityStrikes} type="activity" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-mono text-red-500/70 uppercase w-12">Final</span>
+                            <WarningPips count={staff.finalStrikes} type="final" />
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>

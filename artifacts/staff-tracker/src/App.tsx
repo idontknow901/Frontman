@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
 import { Layout } from "@/components/layout";
+import { PasswordGate } from "@/components/password-gate";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
@@ -35,7 +36,6 @@ function Router() {
 }
 
 function App() {
-  // Ensure the app starts with a dark theme on root
   if (typeof document !== "undefined") {
     document.documentElement.classList.add("dark");
   }
@@ -44,9 +44,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
+          <PasswordGate>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+          </PasswordGate>
         </AuthProvider>
         <Toaster />
       </TooltipProvider>
