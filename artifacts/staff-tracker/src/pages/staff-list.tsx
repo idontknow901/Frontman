@@ -25,10 +25,29 @@ export default function StaffList() {
 
   const { data: staffList, isLoading, isError } = useListStaff(queryParams);
 
-  const filteredStaff = (staffList || []).filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.rank.toLowerCase().includes(search.toLowerCase())
-  );
+  const RANK_ORDER = [
+    "director",
+    "assistant director",
+    "senior rpb",
+    "rpb",
+    "trial rpb",
+    "junior rpb",
+    "intern",
+    "trainee",
+  ];
+
+  const getRankPriority = (rank: string) => {
+    const lower = rank.toLowerCase().trim();
+    const idx = RANK_ORDER.findIndex(r => lower.includes(r));
+    return idx === -1 ? RANK_ORDER.length : idx;
+  };
+
+  const filteredStaff = (staffList || [])
+    .filter(s =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.rank.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => getRankPriority(a.rank) - getRankPriority(b.rank));
 
   const getStatusColor = (s: string) => {
     switch (s) {
