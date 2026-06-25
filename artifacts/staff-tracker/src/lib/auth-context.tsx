@@ -1,29 +1,37 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { useSyncExternalStore } from "react";
 
 const ADMIN_PASSWORD = "Modilovesmamta";
 const STORAGE_KEY = "staff-tracker-admin";
+const CHANGE_EVENT = "rpb-admin-state";
 
-type AuthContextType = {
-  isAdmin: boolean;
-  login: (password: string) => boolean;
-  logout: () => void;
-};
+function getSnapshot(): boolean {
+  return localStorage.getItem(STORAGE_KEY) === "granted";
+}
 
-const AuthContext = createContext<AuthContextType>({
-  isAdmin: false,
-  login: () => false,
-  logout: () => {},
-});
+function subscribe(callback: () => void): () => void {
+  window.addEventListener(CHANGE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAdmin, setIsAdmin] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) === "granted";
-  });
+function dispatch() {
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+export function useAuth() {
+  const isAdmin = useSyncExternalStore(subscribe, getSnapshot);
 
   const login = (password: string): boolean => {
     if (password === ADMIN_PASSWORD) {
       localStorage.setItem(STORAGE_KEY, "granted");
-      setIsAdmin(true);
+      dispatch();
       return true;
     }
     return false;
@@ -31,16 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
-    setIsAdmin(false);
+    dispatch();
   };
 
-  return (
-    <AuthContext.Provider value={{ isAdmin, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
+  return { isAdmin, login, logout };
 }
