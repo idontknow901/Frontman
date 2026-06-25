@@ -567,6 +567,78 @@ export const useIssueWarning = <TError = ErrorType<void>,
       return useMutation(getIssueWarningMutationOptions(options));
     }
 
+export const getRemoveWarningUrl = (id: number,) => {
+
+
+
+
+  return `/api/staff/${id}/warnings/remove`
+}
+
+/**
+ * @summary Remove (decrement) a warning or strike from a staff member
+ */
+export const removeWarning = async (id: number,
+    warningInput: WarningInput, options?: RequestInit): Promise<StaffMember> => {
+
+  return customFetch<StaffMember>(getRemoveWarningUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      warningInput,)
+  }
+);}
+
+
+
+
+export const getRemoveWarningMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeWarning>>, TError,{id: number;data: BodyType<WarningInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeWarning>>, TError,{id: number;data: BodyType<WarningInput>}, TContext> => {
+
+const mutationKey = ['removeWarning'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeWarning>>, {id: number;data: BodyType<WarningInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  removeWarning(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveWarningMutationResult = NonNullable<Awaited<ReturnType<typeof removeWarning>>>
+    export type RemoveWarningMutationBody = BodyType<WarningInput>
+    export type RemoveWarningMutationError = ErrorType<void>
+
+    /**
+ * @summary Remove (decrement) a warning or strike from a staff member
+ */
+export const useRemoveWarning = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeWarning>>, TError,{id: number;data: BodyType<WarningInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeWarning>>,
+        TError,
+        {id: number;data: BodyType<WarningInput>},
+        TContext
+      > => {
+      return useMutation(getRemoveWarningMutationOptions(options));
+    }
+
 export const getUpdateStatsUrl = (id: number,) => {
 
 

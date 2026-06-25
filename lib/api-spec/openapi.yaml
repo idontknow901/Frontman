@@ -164,6 +164,33 @@ paths:
         "404":
           description: Not found
 
+  /staff/{id}/warnings/remove:
+    post:
+      operationId: removeWarning
+      tags: [warnings]
+      summary: Remove (decrement) a warning or strike from a staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarningInput"
+      responses:
+        "200":
+          description: Updated staff member after warning removal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+
   /staff/{id}/stats:
     patch:
       operationId: updateStats

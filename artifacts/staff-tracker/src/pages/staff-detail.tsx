@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import {
   useGetStaff, getGetStaffQueryKey, useUpdateStats, useUpdateStaffStatus,
-  useIssueWarning, useDeleteStaff, useUpdateStaff, WarningInputType
+  useIssueWarning, useRemoveWarning, useDeleteStaff, useUpdateStaff, WarningInputType
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Trash2, ShieldAlert, Activity, ArrowLeft, Pencil, Check, X } from "lucide-react";
+import { AlertTriangle, Trash2, ShieldAlert, Activity, ArrowLeft, Pencil, Check, X, Plus, Minus } from "lucide-react";
 import { Link } from "wouter";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -40,6 +40,7 @@ export default function StaffDetail() {
   const updateStatus = useUpdateStaffStatus();
   const updateStaff = useUpdateStaff();
   const issueWarning = useIssueWarning();
+  const removeWarning = useRemoveWarning();
   const deleteStaff = useDeleteStaff();
 
   if (isLoading) {
@@ -134,6 +135,21 @@ export default function StaffDetail() {
     );
   };
 
+  const handleRemoveWarning = (type: WarningInputType) => {
+    removeWarning.mutate(
+      { id: staffId, data: { type } },
+      {
+        onSuccess: (data) => {
+          refresh(data);
+          toast({ title: "Warning removed", description: `${type === WarningInputType.written ? 'Written warning' : type === WarningInputType.activityStrike ? 'Activity strike' : 'Final strike'} removed.` });
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to remove warning", description: err?.message || "Please try again.", variant: "destructive" });
+        },
+      }
+    );
+  };
+
   const handleDelete = () => {
     if (!confirm(`Permanently remove ${staff.name}? This cannot be undone.`)) return;
     deleteStaff.mutate(
@@ -150,14 +166,43 @@ export default function StaffDetail() {
     );
   };
 
+  const warningTypeMap: Record<'written' | 'activity' | 'final', WarningInputType> = {
+    written: WarningInputType.written,
+    activity: WarningInputType.activityStrike,
+    final: WarningInputType.finalStrike,
+  };
+
   const WarningBar = ({ count, type, label }: { count: number; type: 'written' | 'activity' | 'final'; label: string }) => {
     const filled = type === 'written' ? 'bg-yellow-500' : type === 'activity' ? 'bg-orange-500' : 'bg-red-500';
     const text = type === 'written' ? 'text-yellow-500' : type === 'activity' ? 'text-orange-500' : 'text-red-500';
+    const wType = warningTypeMap[type];
     return (
       <div className="space-y-1.5">
-        <div className="flex justify-between text-xs font-mono">
+        <div className="flex justify-between items-center text-xs font-mono">
           <span className={`${text} font-medium uppercase`}>{label}</span>
-          <span className="font-bold">{count} / 3</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold">{count} / 3</span>
+            {isAdmin && (
+              <div className="flex gap-1">
+                <button
+                  onClick={() => count > 0 && handleRemoveWarning(wType)}
+                  disabled={count === 0 || removeWarning.isPending}
+                  className="w-5 h-5 rounded flex items-center justify-center bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-border"
+                  title={`Remove ${label}`}
+                >
+                  <Minus className="w-2.5 h-2.5" />
+                </button>
+                <button
+                  onClick={() => setWarningDialog({ isOpen: true, type: wType })}
+                  disabled={count >= 3 || issueWarning.isPending}
+                  className="w-5 h-5 rounded flex items-center justify-center bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-border"
+                  title={`Add ${label}`}
+                >
+                  <Plus className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex gap-1 h-3">
           {[1, 2, 3].map(i => (

@@ -185,6 +185,43 @@ export const IssueWarningResponse = zod.object({
 
 
 /**
+ * @summary Remove (decrement) a warning or strike from a staff member
+ */
+export const RemoveWarningParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RemoveWarningBody = zod.object({
+  "type": zod.enum(['written', 'activityStrike', 'finalStrike']),
+  "note": zod.string().optional()
+})
+
+export const RemoveWarningResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "rank": zod.string(),
+  "division": zod.enum(['Event', 'Training']),
+  "status": zod.enum(['Active', 'LOA', 'Suspended', 'Terminated']),
+  "accessLevel": zod.enum(['Staff', 'Assistant Director', 'Director', 'HQ']),
+  "weeklyVoiceHours": zod.number(),
+  "weeklyMessages": zod.number(),
+  "weeklyEventsHosted": zod.number(),
+  "weeklyMiniEventsHosted": zod.number(),
+  "monthlyVoiceHours": zod.number(),
+  "monthlyMessages": zod.number(),
+  "monthlyEventsHosted": zod.number(),
+  "monthlyMiniEventsHosted": zod.number(),
+  "writtenWarnings": zod.number(),
+  "activityStrikes": zod.number(),
+  "finalStrikes": zod.number(),
+  "suspendedAt": zod.string().nullish(),
+  "terminatedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
  * @summary Update weekly or monthly stats for a staff member
  */
 export const UpdateStatsParams = zod.object({

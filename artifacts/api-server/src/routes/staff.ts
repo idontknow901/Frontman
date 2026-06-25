@@ -189,6 +189,43 @@ router.post("/staff/:id/warnings", async (req, res) => {
   return res.json(serializeStaff(updated));
 });
 
+// POST /api/staff/:id/warnings/remove
+router.post("/staff/:id/warnings/remove", async (req, res) => {
+  const params = IssueWarningParams.safeParse({ id: Number(req.params.id) });
+  const body = IssueWarningBody.safeParse(req.body);
+
+  if (!params.success || !body.success) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
+
+  const [current] = await db
+    .select()
+    .from(staffTable)
+    .where(eq(staffTable.id, params.data.id));
+
+  if (!current) {
+    return res.status(404).json({ error: "Staff member not found" });
+  }
+
+  const updateData: Partial<typeof staffTable.$inferInsert> = {};
+
+  if (body.data.type === "written") {
+    updateData.writtenWarnings = Math.max(current.writtenWarnings - 1, 0);
+  } else if (body.data.type === "activityStrike") {
+    updateData.activityStrikes = Math.max(current.activityStrikes - 1, 0);
+  } else if (body.data.type === "finalStrike") {
+    updateData.finalStrikes = Math.max(current.finalStrikes - 1, 0);
+  }
+
+  const [updated] = await db
+    .update(staffTable)
+    .set(updateData)
+    .where(eq(staffTable.id, params.data.id))
+    .returning();
+
+  return res.json(serializeStaff(updated));
+});
+
 // PATCH /api/staff/:id/stats
 router.patch("/staff/:id/stats", async (req, res) => {
   const params = UpdateStatsParams.safeParse({ id: Number(req.params.id) });
