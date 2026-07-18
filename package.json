@@ -16,5 +16,8 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "dependencies": {
+    "serverless-http": "^4.0.0"
   }
 }
