@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLocation } from "wouter";
-import { useCreateStaff, StaffInputDivision, StaffInputAccessLevel } from "@workspace/api-client-react";
+import { useCreateStaff, StaffInputDivision, StaffInputAccessLevel } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";

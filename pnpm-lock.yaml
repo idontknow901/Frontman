@@ -608,6 +608,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.100.9(react@19.1.0)
+      firebase:
+        specifier: ^12.16.0
+        version: 12.16.0
 
   lib/api-spec:
     devDependencies:

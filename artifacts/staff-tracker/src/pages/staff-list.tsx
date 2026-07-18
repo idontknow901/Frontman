@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListStaff, ListStaffDivision, ListStaffStatus } from "@workspace/api-client-react";
+import { useListStaff, ListStaffDivision, ListStaffStatus } from "@/lib/api";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

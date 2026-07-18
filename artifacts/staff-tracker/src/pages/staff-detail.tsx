@@ -3,7 +3,7 @@ import { useParams, useLocation } from "wouter";
 import {
   useGetStaff, getGetStaffQueryKey, useUpdateStats, useUpdateStaffStatus,
   useIssueWarning, useRemoveWarning, useDeleteStaff, useUpdateStaff, WarningInputType
-} from "@workspace/api-client-react";
+} from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
