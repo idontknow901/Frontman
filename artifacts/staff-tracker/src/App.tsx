@@ -10,6 +10,12 @@ import Settings from "@/pages/settings";
 import AddStaff from "@/pages/add-staff";
 import StaffList from "@/pages/staff-list";
 import StaffDetail from "@/pages/staff-detail";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
+
+const LiveUpdater = () => {
+  useLiveUpdates();
+  return null;
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +47,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LiveUpdater />
       <TooltipProvider>
         <AuthProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

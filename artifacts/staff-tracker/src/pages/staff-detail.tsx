@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, Trash2, ShieldAlert, Activity, ArrowLeft, Pencil, Check, X, Plus, Minus } from "lucide-react";
 import { Link } from "wouter";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { triggerLiveUpdate } from "@/lib/firebase";
 
 export default function StaffDetail() {
   const { id } = useParams();
@@ -77,7 +78,7 @@ export default function StaffDetail() {
     updateStatus.mutate(
       { id: staffId, data: { status: newStatus as any } },
       {
-        onSuccess: (data) => { refresh(data); toast({ title: "Status updated", description: `Changed to ${newStatus}` }); },
+        onSuccess: (data) => { triggerLiveUpdate(); refresh(data); toast({ title: "Status updated", description: `Changed to ${newStatus}` }); },
         onError: () => errToast("Update status"),
       }
     );
@@ -88,6 +89,7 @@ export default function StaffDetail() {
       { id: staffId, data: { period, voiceHours: Number(statsForm.voiceHours), messages: Math.round(Number(statsForm.messages)), eventsHosted: Math.round(Number(statsForm.eventsHosted)), miniEventsHosted: Math.round(Number(statsForm.miniEventsHosted)) } },
       {
         onSuccess: (data) => {
+          triggerLiveUpdate();
           refresh(data);
           setIsEditingStats(false);
           toast({ title: "Stats saved", description: `${period === 'weekly' ? 'Weekly' : 'Monthly'} stats updated.` });
@@ -108,6 +110,7 @@ export default function StaffDetail() {
       { id: staffId, data: { name: infoForm.name.trim(), rank: infoForm.rank.trim(), division: infoForm.division as any } },
       {
         onSuccess: (data) => {
+          triggerLiveUpdate();
           refresh(data);
           setIsEditingInfo(false);
           toast({ title: "Profile updated", description: "Name, rank, and division saved." });
@@ -124,6 +127,7 @@ export default function StaffDetail() {
       { id: staffId, data: { type } },
       {
         onSuccess: (data) => {
+          triggerLiveUpdate();
           refresh(data);
           setWarningDialog({ isOpen: false, type: null });
           toast({ title: "Warning issued", description: `${type === WarningInputType.written ? 'Written warning' : type === WarningInputType.activityStrike ? 'Activity strike' : 'Final strike'} recorded.`, variant: "destructive" });
@@ -140,6 +144,7 @@ export default function StaffDetail() {
       { id: staffId, data: { type } },
       {
         onSuccess: (data) => {
+          triggerLiveUpdate();
           refresh(data);
           toast({ title: "Warning removed", description: `${type === WarningInputType.written ? 'Written warning' : type === WarningInputType.activityStrike ? 'Activity strike' : 'Final strike'} removed.` });
         },
@@ -156,6 +161,7 @@ export default function StaffDetail() {
       { id: staffId },
       {
         onSuccess: () => {
+          triggerLiveUpdate();
           toast({ title: "Staff removed", description: `${staff.name} has been deleted.` });
           setLocation("/staff");
         },

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
+import { triggerLiveUpdate } from "@/lib/firebase";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -44,6 +45,7 @@ export default function AddStaff() {
   function onSubmit(values: FormValues) {
     createStaff.mutate({ data: values }, {
       onSuccess: (newStaff) => {
+        triggerLiveUpdate();
         toast({ title: "Staff Added", description: `${newStaff.name} has been added.` });
         setLocation("/staff");
       },
