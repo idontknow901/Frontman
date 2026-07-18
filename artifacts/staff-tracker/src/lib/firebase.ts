@@ -3,12 +3,12 @@ import { getFirestore, doc, setDoc } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDOYEv9tBAcGxQzPVEEhQqQ6EI_saSz39U",
-  authDomain: "train-booking-41cd9.firebaseapp.com",
-  projectId: "train-booking-41cd9",
-  storageBucket: "train-booking-41cd9.firebasestorage.app",
-  messagingSenderId: "837662420324",
-  appId: "1:837662420324:web:7df66c1dc8fb76f51a5e71"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase
