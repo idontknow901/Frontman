@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm -r run build"
+  command = "pnpm --filter @workspace/staff-tracker run build"
   publish = "artifacts/staff-tracker/dist/public"
 
 [[redirects]]
