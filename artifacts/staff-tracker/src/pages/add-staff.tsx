@@ -43,7 +43,7 @@ export default function AddStaff() {
   });
 
   function onSubmit(values: FormValues) {
-    createStaff.mutate({ data: values }, {
+    createStaff.mutate(values, {
       onSuccess: (newStaff) => {
         triggerLiveUpdate();
         toast({ title: "Staff Added", description: `${newStaff.name} has been added.` });
